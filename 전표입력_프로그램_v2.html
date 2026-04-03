@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HQ Account - 전표입력 프로그램</title>
+<title>HQ Account - 전표입력 프로그램 v2.0</title>
 <style>
   :root {
     --primary: #2563eb;
@@ -229,7 +229,7 @@
 
 <!-- Sidebar -->
 <nav class="sidebar">
-  <div class="sidebar-header">HQ Account</div>
+  <div class="sidebar-header">HQ Account v2.0</div>
   <ul class="sidebar-menu">
     <li class="active" onclick="showPage('input')">📝 전표입력</li>
     <li onclick="showPage('search')">🔍 전표조회</li>
@@ -498,27 +498,77 @@
     <!-- ==================== 데이터관리 페이지 ==================== -->
     <div id="page-data" class="hidden">
       <div class="card">
-        <div class="card-title">데이터 내보내기 (v2.0 프로그램으로 이전)</div>
+        <div class="card-title">전체 데이터 내보내기 (백업)</div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
-          현재 프로그램에 저장된 전표, 계정과목, 분류순서, 마감 데이터를 하나의 파일로 내보냅니다.<br>
-          다운로드한 파일을 <strong>전표입력 프로그램 v2.0</strong>의 <strong>데이터관리 > 가져오기</strong>에서 업로드하면 데이터가 이전됩니다.
+          전표, 계정과목, 분류순서, 마감 데이터를 포함한 전체 백업 파일을 다운로드합니다.<br>
+          이전 프로그램의 데이터를 이 프로그램으로 이관할 때 사용합니다.
         </p>
-        <div class="btn-group" style="margin-bottom:20px;">
+        <div class="btn-group">
           <button class="btn btn-primary" onclick="exportAllData()">📥 전체 데이터 다운로드 (JSON)</button>
           <button class="btn btn-outline" onclick="exportVouchersCSV()">📥 전표만 다운로드 (CSV)</button>
         </div>
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;font-size:13px;color:#1e40af;">
-          <strong>이전 방법 안내</strong><br>
-          1. 위 버튼으로 데이터를 다운로드합니다.<br>
-          2. <strong>전표입력_프로그램_v2.html</strong> 파일을 엽니다.<br>
-          3. 좌측 메뉴에서 <strong>💾 데이터관리</strong>를 클릭합니다.<br>
-          4. <strong>데이터 가져오기</strong>에서 다운로드한 파일을 업로드합니다.
+      </div>
+
+      <div class="card">
+        <div class="card-title">데이터 가져오기 (복원)</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+          백업 파일(JSON) 또는 전표 CSV 파일을 업로드하여 데이터를 복원합니다.<br>
+          <strong style="color:#dc2626;">주의: 기존 데이터에 병합되거나, 전체 교체할 수 있습니다.</strong>
+        </p>
+        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px;">
+          <div class="form-group">
+            <label>파일 선택 (JSON 또는 CSV)</label>
+            <input type="file" id="dataImportFile" accept=".json,.csv" style="font-size:13px;">
+          </div>
+          <div class="form-group">
+            <label>가져오기 방식</label>
+            <select id="importMode">
+              <option value="merge">병합 (기존 데이터 유지 + 추가)</option>
+              <option value="replace">전체 교체 (기존 데이터 삭제)</option>
+            </select>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="previewImportData()">미리보기</button>
+          </div>
+        </div>
+
+        <div id="dataImportPreview" class="hidden">
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
+            <div class="card-title">가져오기 미리보기</div>
+            <div id="dataImportSummary" style="font-size:13px;margin-bottom:12px;"></div>
+            <div style="max-height:300px;overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:40px">No</th>
+                    <th>날짜</th>
+                    <th>계정과목</th>
+                    <th class="text-right">금액</th>
+                    <th>적요</th>
+                  </tr>
+                </thead>
+                <tbody id="dataImportTable"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="confirmImportData()">확인 가져오기</button>
+              <button class="btn btn-outline" onclick="cancelImportData()">취소</button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-title">현재 데이터 현황</div>
         <div id="dataStatusSummary" style="font-size:13px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">데이터 초기화</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+          모든 데이터를 삭제하고 초기 상태로 되돌립니다. 이 작업은 되돌릴 수 없습니다.
+        </p>
+        <button class="btn btn-danger" onclick="confirmResetAllData()">전체 데이터 초기화</button>
       </div>
     </div>
 
@@ -1495,6 +1545,215 @@ function exportVouchersCSV() {
   a.download = `HQ_Account_전표_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   showToast(`전표 ${sorted.length}건 CSV 다운로드 완료`);
+}
+
+let importPendingData = null;
+let importPendingType = null; // 'json' or 'csv'
+
+function previewImportData() {
+  const fileInput = document.getElementById('dataImportFile');
+  const file = fileInput.files[0];
+  if (!file) { showToast('파일을 선택해주세요.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const isJson = file.name.toLowerCase().endsWith('.json');
+
+    if (isJson) {
+      try {
+        const data = JSON.parse(text);
+        importPendingData = data;
+        importPendingType = 'json';
+
+        const vCount = (data.vouchers || []).length;
+        const aCount = (data.accounts || []).length;
+        const hasCatOrder = !!data.categoryOrder;
+        const hasClosing = !!data.closing;
+
+        let summary = `<strong>JSON 백업 파일</strong>`;
+        if (data.exportDate) summary += ` (내보내기 날짜: ${data.exportDate.slice(0, 10)})`;
+        summary += `<br>`;
+        summary += `• 전표: <strong>${vCount}건</strong><br>`;
+        summary += `• 계정과목: <strong>${aCount}건</strong><br>`;
+        summary += `• 분류순서: ${hasCatOrder ? '<span class="badge badge-green">포함</span>' : '<span class="badge badge-gray">없음</span>'} `;
+        summary += `• 마감데이터: ${hasClosing ? '<span class="badge badge-green">포함</span>' : '<span class="badge badge-gray">없음</span>'}`;
+        document.getElementById('dataImportSummary').innerHTML = summary;
+
+        const tbody = document.getElementById('dataImportTable');
+        const preview = (data.vouchers || []).slice(0, 50);
+        tbody.innerHTML = preview.map((v, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${v.date}</td>
+            <td>${v.account}</td>
+            <td class="text-right">${fmt(v.amount)}</td>
+            <td>${v.memo || ''}</td>
+          </tr>`).join('');
+        if (vCount > 50) {
+          tbody.innerHTML += `<tr><td colspan="5" class="text-center" style="color:var(--text-secondary);padding:12px;">... 외 ${vCount - 50}건 더</td></tr>`;
+        }
+
+        document.getElementById('dataImportPreview').classList.remove('hidden');
+      } catch (err) {
+        showToast('JSON 파일 파싱 오류: ' + err.message);
+      }
+    } else {
+      // CSV
+      const rows = parseCSV(text);
+      if (rows.length === 0) { showToast('유효한 데이터가 없습니다.'); return; }
+
+      importPendingData = rows;
+      importPendingType = 'csv';
+
+      let summary = `<strong>CSV 전표 파일</strong><br>`;
+      summary += `• 전표: <strong>${rows.length}건</strong>`;
+      document.getElementById('dataImportSummary').innerHTML = summary;
+
+      const tbody = document.getElementById('dataImportTable');
+      const preview = rows.slice(0, 50);
+      tbody.innerHTML = preview.map((v, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${v.date}</td>
+          <td>${v.account}</td>
+          <td class="text-right">${v.amount ? fmt(v.amount) : '-'}</td>
+          <td>${v.memo || ''}</td>
+        </tr>`).join('');
+      if (rows.length > 50) {
+        tbody.innerHTML += `<tr><td colspan="5" class="text-center" style="color:var(--text-secondary);padding:12px;">... 외 ${rows.length - 50}건 더</td></tr>`;
+      }
+
+      document.getElementById('dataImportPreview').classList.remove('hidden');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function confirmImportData() {
+  const mode = document.getElementById('importMode').value;
+
+  if (importPendingType === 'json') {
+    const data = importPendingData;
+
+    if (mode === 'replace') {
+      vouchers = (data.vouchers || []);
+      accounts = (data.accounts || []);
+      if (data.categoryOrder) CATEGORY_ORDER = data.categoryOrder;
+      if (data.closing) closingData = data.closing;
+      nextId = vouchers.length > 0 ? Math.max(...vouchers.map(v => v.id)) + 1 : 1;
+      acctNextId = accounts.length > 0 ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+    } else {
+      // 병합
+      const existingIds = new Set(vouchers.map(v => `${v.date}_${v.account}_${v.amount}_${v.memo}`));
+      let added = 0;
+      (data.vouchers || []).forEach(v => {
+        const key = `${v.date}_${v.account}_${v.amount}_${v.memo}`;
+        if (!existingIds.has(key)) {
+          vouchers.push({ id: nextId++, date: v.date, account: v.account, amount: v.amount, memo: v.memo || '' });
+          existingIds.add(key);
+          added++;
+        }
+      });
+      // 계정과목 병합
+      const existingAcctNames = new Set(accounts.map(a => a.name));
+      (data.accounts || []).forEach(a => {
+        if (!existingAcctNames.has(a.name)) {
+          accounts.push({ id: acctNextId++, category: a.category, name: a.name, note: a.note || '', active: a.active !== false });
+          existingAcctNames.add(a.name);
+        }
+      });
+    }
+
+    saveToStorage();
+    saveAccountsToStorage();
+    saveCategoryOrder();
+    saveClosingData();
+    showToast(mode === 'replace' ? '전체 데이터가 교체되었습니다.' : '데이터가 병합되었습니다.');
+
+  } else if (importPendingType === 'csv') {
+    const rows = importPendingData;
+
+    if (mode === 'replace') {
+      vouchers = [];
+      nextId = 1;
+    }
+
+    let imported = 0;
+    let skipped = 0;
+    const existingIds = new Set(vouchers.map(v => `${v.date}_${v.account}_${v.amount}_${v.memo}`));
+
+    rows.forEach(r => {
+      if (!r.date || !r.account || !r.amount) { skipped++; return; }
+      const key = `${r.date}_${r.account}_${r.amount}_${r.memo}`;
+      if (mode === 'merge' && existingIds.has(key)) { skipped++; return; }
+      // CSV 업로드 시 없는 계정과목은 자동 등록
+      const acct = accounts.find(a => a.name === r.account);
+      if (!acct) {
+        accounts.push({ id: acctNextId++, category: '판매비와관리비', name: r.account, note: '자동등록', active: true });
+        saveAccountsToStorage();
+      }
+      vouchers.push({ id: nextId++, date: r.date, account: r.account, amount: r.amount, memo: r.memo || '' });
+      existingIds.add(key);
+      imported++;
+    });
+
+    saveToStorage();
+    showToast(`${imported}건 가져오기 완료` + (skipped > 0 ? `, ${skipped}건 건너뜀` : ''));
+  }
+
+  cancelImportData();
+  refreshAllAccountSelects();
+  renderCategoryOrder();
+}
+
+function cancelImportData() {
+  importPendingData = null;
+  importPendingType = null;
+  document.getElementById('dataImportPreview').classList.add('hidden');
+  document.getElementById('dataImportTable').innerHTML = '';
+  document.getElementById('dataImportSummary').innerHTML = '';
+  document.getElementById('dataImportFile').value = '';
+}
+
+function confirmResetAllData() {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">⚠️ 전체 데이터 초기화</div>
+        <div class="modal-body">
+          모든 전표, 계정과목, 분류순서, 마감 데이터가 삭제됩니다.<br>
+          <strong style="color:#dc2626;">이 작업은 되돌릴 수 없습니다.</strong><br><br>
+          계속하시겠습니까?
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="closeModal()">취소</button>
+          <button class="btn btn-danger" onclick="resetAllData()">초기화 실행</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function resetAllData() {
+  localStorage.removeItem('hq_vouchers');
+  localStorage.removeItem('hq_accounts');
+  localStorage.removeItem('hq_category_order');
+  localStorage.removeItem('hq_closing');
+  vouchers = [];
+  nextId = 1;
+  accounts = DEFAULT_ACCOUNTS.map(a => ({ ...a }));
+  acctNextId = accounts.length > 0 ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+  CATEGORY_ORDER = DEFAULT_CATEGORY_ORDER.map(c => ({ ...c }));
+  closingData = {};
+  saveToStorage();
+  saveAccountsToStorage();
+  saveCategoryOrder();
+  saveClosingData();
+  closeModal();
+  refreshAllAccountSelects();
+  renderCategoryOrder();
+  showToast('전체 데이터가 초기화되었습니다.');
 }
 
 function renderDataStatus() {
