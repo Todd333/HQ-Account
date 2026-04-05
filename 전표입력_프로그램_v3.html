@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HQ Account - 전표입력 프로그램 v3.0</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --success: #16a34a;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #2563eb;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', '맑은 고딕', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px; background: var(--sidebar-bg); color: var(--sidebar-text);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 20px; font-size: 18px; font-weight: 700; color: #fff;
+    border-bottom: 1px solid #334155; text-align: center;
+  }
+  .sidebar-menu { list-style: none; padding: 12px 0; }
+  .sidebar-menu li {
+    padding: 12px 24px; cursor: pointer; font-size: 14px;
+    transition: all 0.2s; border-left: 3px solid transparent;
+  }
+  .sidebar-menu li:hover { background: #334155; color: #fff; }
+  .sidebar-menu li.active {
+    background: rgba(37,99,235,0.15); color: #60a5fa;
+    border-left-color: var(--sidebar-active); font-weight: 600;
+  }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    padding: 16px 28px; background: var(--card); border-bottom: 1px solid var(--border);
+    font-size: 20px; font-weight: 700;
+  }
+  .content { flex: 1; padding: 24px 28px; overflow-y: auto; }
+
+  /* Cards */
+  .card {
+    background: var(--card); border-radius: 10px; padding: 24px;
+    border: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+
+  /* Form */
+  .form-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr 2fr; gap: 14px; align-items: end;
+  }
+  .form-group { display: flex; flex-direction: column; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; outline: none; transition: border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+
+  .btn-group { display: flex; gap: 8px; align-items: end; }
+  .btn {
+    padding: 9px 20px; border: none; border-radius: 6px; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-outline:hover { background: #f1f5f9; }
+  .btn-danger { background: var(--danger); color: #fff; font-size: 12px; padding: 5px 12px; }
+  .btn-danger:hover { background: var(--danger-hover); }
+  .btn-edit { background: #f59e0b; color: #fff; font-size: 12px; padding: 5px 12px; }
+  .btn-edit:hover { background: #d97706; }
+  .btn-sm { font-size: 12px; padding: 6px 14px; }
+  .btn-toggle { font-size: 12px; padding: 5px 12px; }
+  .btn-toggle-off { background: #94a3b8; color: #fff; }
+  .btn-toggle-off:hover { background: #64748b; }
+  .btn-toggle-on { background: var(--success); color: #fff; }
+  .btn-toggle-on:hover { background: #15803d; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #f1f5f9; padding: 10px 12px; text-align: left;
+    font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border);
+    font-size: 12px; white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+  }
+  tbody tr:hover { background: #f8fafc; }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .total-row { font-weight: 700; background: #f1f5f9 !important; }
+  .total-row td { border-top: 2px solid var(--text); }
+  .row-inactive { opacity: 0.5; }
+
+  /* Search filters */
+  .filter-row { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; }
+
+  /* Report table */
+  .report-table { font-size: 12px; }
+  .report-table th, .report-table td { padding: 8px 10px; white-space: nowrap; }
+  .report-table thead th { background: var(--sidebar-bg); color: #fff; text-align: center; font-size: 11px; }
+  .report-table tbody td { text-align: right; }
+  .report-table tbody td:first-child { text-align: left; font-weight: 600; }
+
+  /* Year selector */
+  .year-selector { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .year-selector label { font-weight: 600; font-size: 14px; }
+
+  /* Badge */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #16a34a; }
+  .badge-gray { background: #f1f5f9; color: #94a3b8; }
+  .badge-red { background: #fef2f2; color: #dc2626; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+    background: #1e293b; color: #fff; border-radius: 8px; font-size: 13px;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+  }
+  .modal {
+    background: #fff; border-radius: 12px; padding: 24px; width: 420px;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .modal-body { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal .form-group { margin-bottom: 12px; }
+
+  /* Summary bar */
+  .summary-bar {
+    display: flex; gap: 24px; padding: 12px 16px; background: #f1f5f9;
+    border-radius: 8px; margin-top: 12px; font-size: 13px;
+  }
+  .summary-item { display: flex; gap: 6px; }
+  .summary-label { color: var(--text-secondary); }
+  .summary-value { font-weight: 700; color: var(--primary); }
+
+  /* Account form */
+  .acct-form-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  .acct-form-row .form-group { min-width: 150px; }
+
+  .hidden { display: none; }
+
+  /* Category order */
+  .cat-order-list { list-style: none; }
+  .cat-order-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 6px; background: #fff; font-size: 13px; font-weight: 600;
+  }
+  .cat-order-item .cat-order-num {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--primary);
+    color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center;
+  }
+  .cat-order-item .cat-order-name { flex: 1; }
+  .cat-order-item .cat-order-btns { display: flex; gap: 4px; }
+  .cat-order-item .cat-order-btns button {
+    width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 4px;
+    background: #f8fafc; cursor: pointer; font-size: 14px; display: flex;
+    align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .cat-order-item .cat-order-btns button:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .cat-order-item .cat-order-btns button:disabled { opacity: 0.3; cursor: default; background: #f8fafc; color: var(--text); border-color: var(--border); }
+  .cat-type-badge {
+    padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;
+    cursor: pointer; user-select: none; transition: all 0.2s;
+  }
+  .cat-type-revenue { background: #dbeafe; color: #1d4ed8; }
+  .cat-type-revenue:hover { background: #bfdbfe; }
+  .cat-type-expense { background: #fef2f2; color: #dc2626; }
+  .cat-type-expense:hover { background: #fecaca; }
+  .cat-type-asset { background: #f0fdf4; color: #16a34a; }
+  .cat-type-asset:hover { background: #dcfce7; }
+  .cat-type-liability { background: #fefce8; color: #a16207; }
+  .cat-type-liability:hover { background: #fef9c3; }
+  .cat-type-equity { background: #f5f3ff; color: #7c3aed; }
+  .cat-type-equity:hover { background: #ede9fe; }
+
+  /* Report section headers & subtotals */
+  .report-section-header {
+    font-weight: 700; font-size: 12px; padding: 8px 12px !important;
+    text-align: left !important; border-bottom: 2px solid var(--border);
+  }
+  .report-section-revenue { background: #eff6ff; color: #1d4ed8; }
+  .report-section-expense { background: #fef2f2; color: #dc2626; }
+  .subtotal-row { font-weight: 700; }
+  .subtotal-row td { border-top: 1px solid #94a3b8; }
+  .subtotal-revenue { background: #f0f9ff !important; }
+  .subtotal-revenue td { color: #1d4ed8; }
+  .subtotal-expense { background: #fff5f5 !important; }
+  .subtotal-expense td { color: #dc2626; }
+  .report-section-asset { background: #f0fdf4; color: #16a34a; }
+  .report-section-liability { background: #fefce8; color: #a16207; }
+  .report-section-equity { background: #f5f3ff; color: #7c3aed; }
+  .subtotal-asset { background: #f0fdf4 !important; }
+  .subtotal-asset td { color: #16a34a; }
+  .subtotal-liability { background: #fefce8 !important; }
+  .subtotal-liability td { color: #a16207; }
+  .subtotal-equity { background: #f5f3ff !important; }
+  .subtotal-equity td { color: #7c3aed; }
+
+  /* Closing (마감) */
+  .closing-row td { text-align: center; padding: 6px 4px !important; }
+  .btn-close-month {
+    padding: 3px 8px; border: 1px solid var(--border); border-radius: 4px;
+    font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    background: #f8fafc; color: var(--text-secondary);
+  }
+  .btn-close-month:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-close-month.closed { background: #dc2626; color: #fff; border-color: #dc2626; }
+  .btn-close-month.closed:hover { background: #b91c1c; border-color: #b91c1c; }
+  .carryover-row { background: #fefce8 !important; }
+  .carryover-row td { color: #a16207; font-weight: 600; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-header">HQ Account v3.0</div>
+  <ul class="sidebar-menu">
+    <li class="active" onclick="showPage('input')">📝 전표입력</li>
+    <li onclick="showPage('search')">🔍 전표조회</li>
+    <li onclick="showPage('report')">📊 월별내역표</li>
+    <li onclick="showPage('accounts')">⚙️ 계정과목관리</li>
+    <li onclick="showPage('data')">💾 데이터관리</li>
+  </ul>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="topbar" id="pageTitle">전표입력</div>
+  <div class="content">
+
+    <!-- ==================== 전표입력 페이지 ==================== -->
+    <div id="page-input">
+      <div class="card">
+        <div class="card-title">전표 입력</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>날짜</label>
+            <input type="date" id="vDate">
+          </div>
+          <div class="form-group">
+            <label>계정과목</label>
+            <select id="vAccount"></select>
+          </div>
+          <div class="form-group">
+            <label>금액 (원)</label>
+            <input type="text" id="vAmount" placeholder="0" oninput="formatAmountInput(this)">
+          </div>
+          <div class="form-group">
+            <label>적요</label>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="vMemo" placeholder="적요를 입력하세요" style="flex:1;">
+              <button class="btn btn-primary" onclick="saveVoucher()">저장</button>
+              <button class="btn btn-outline" onclick="resetForm()">초기화</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">CSV 일괄 입력</div>
+        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">
+          <div class="form-group">
+            <label>CSV 파일 선택</label>
+            <input type="file" id="csvFile" accept=".csv" style="font-size:13px;">
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="importCSV()">일괄 등록</button>
+            <button class="btn btn-outline" onclick="downloadCsvTemplate()">📥 양식 다운로드</button>
+          </div>
+        </div>
+        <div id="csvPreview" class="hidden" style="margin-top:16px;">
+          <div class="card-title">미리보기 (<span id="csvPreviewCount">0</span>건)</div>
+          <div style="max-height:200px;overflow-y:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:40px">No</th>
+                  <th>날짜</th>
+                  <th>계정과목</th>
+                  <th class="text-right">금액</th>
+                  <th>적요</th>
+                  <th class="text-center">상태</th>
+                </tr>
+              </thead>
+              <tbody id="csvPreviewTable"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="confirmCsvImport()">확인 등록</button>
+            <button class="btn btn-outline" onclick="cancelCsvImport()">취소</button>
+          </div>
+        </div>
+        <p style="margin-top:10px;font-size:12px;color:var(--text-secondary);">
+          CSV 형식: 날짜,계정과목,금액,적요 (첫 행은 헤더, UTF-8 인코딩)
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">오늘 입력한 전표</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">No</th>
+              <th>날짜</th>
+              <th>계정과목</th>
+              <th class="text-right">금액</th>
+              <th>적요</th>
+              <th class="text-center" style="width:100px">관리</th>
+            </tr>
+          </thead>
+          <tbody id="todayTable"></tbody>
+        </table>
+        <div class="summary-bar" id="todaySummary">
+          <div class="summary-item"><span class="summary-label">건수:</span><span class="summary-value" id="todayCount">0건</span></div>
+          <div class="summary-item"><span class="summary-label">합계:</span><span class="summary-value" id="todayTotal">0원</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 전표조회 페이지 ==================== -->
+    <div id="page-search" class="hidden">
+      <div class="card">
+        <div class="card-title">검색 필터</div>
+        <div class="filter-row">
+          <div class="form-group">
+            <label>시작일</label>
+            <input type="date" id="sDateFrom">
+          </div>
+          <div class="form-group">
+            <label>종료일</label>
+            <input type="date" id="sDateTo">
+          </div>
+          <div class="form-group">
+            <label>계정과목</label>
+            <select id="sAccount"></select>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="searchVouchers()">검색</button>
+            <button class="btn btn-outline" onclick="resetSearch()">초기화</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="card-title" style="margin-bottom:0;">검색 결과</div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="exportSearchCSV()">📥 CSV 다운로드</button>
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0;">
+              📤 CSV 업로드
+              <input type="file" accept=".csv" id="searchCsvFile" onchange="uploadSearchCSV()" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">No</th>
+              <th>날짜</th>
+              <th>계정과목</th>
+              <th class="text-right">금액</th>
+              <th>적요</th>
+              <th class="text-center" style="width:100px">관리</th>
+            </tr>
+          </thead>
+          <tbody id="searchTable"></tbody>
+        </table>
+        <div class="summary-bar">
+          <div class="summary-item"><span class="summary-label">검색 건수:</span><span class="summary-value" id="searchCount">0건</span></div>
+          <div class="summary-item"><span class="summary-label">합계 금액:</span><span class="summary-value" id="searchTotal">0원</span></div>
+        </div>
+        <!-- CSV 업로드 미리보기 -->
+        <div id="searchCsvPreview" class="hidden" style="margin-top:16px;">
+          <div class="card-title">업로드 미리보기 (<span id="searchCsvPreviewCount">0</span>건)</div>
+          <div style="max-height:300px;overflow-y:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:40px">No</th>
+                  <th>날짜</th>
+                  <th>계정과목</th>
+                  <th class="text-right">금액</th>
+                  <th>적요</th>
+                  <th class="text-center">상태</th>
+                </tr>
+              </thead>
+              <tbody id="searchCsvPreviewTable"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="confirmSearchCsvImport()">확인 등록</button>
+            <button class="btn btn-outline" onclick="cancelSearchCsvImport()">취소</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 월별내역표 페이지 ==================== -->
+    <div id="page-report" class="hidden">
+      <div class="card">
+        <div class="year-selector">
+          <label>연도 선택:</label>
+          <select id="reportYear" onchange="generateReport()"></select>
+          <button class="btn btn-primary btn-sm" onclick="generateReport()">조회</button>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 CSV 다운로드</button>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="report-table" id="reportTable">
+            <thead>
+              <tr>
+                <th style="min-width:110px; text-align:left;">계정과목</th>
+                <th>1월</th><th>2월</th><th>3월</th><th>4월</th><th>5월</th><th>6월</th>
+                <th>7월</th><th>8월</th><th>9월</th><th>10월</th><th>11월</th><th>12월</th>
+                <th style="background:#1e40af;">합계</th>
+              </tr>
+            </thead>
+            <tbody id="reportBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 계정과목관리 페이지 ==================== -->
+    <div id="page-accounts" class="hidden">
+      <div class="card">
+        <div class="card-title">계정과목 등록</div>
+        <div class="acct-form-row">
+          <div class="form-group">
+            <label>분류</label>
+            <select id="aCategory">
+              <optgroup label="── 손익계산서 ──">
+                <option value="수익">수익</option>
+                <option value="판매비와관리비" selected>판매비와관리비</option>
+                <option value="영업외수익">영업외수익</option>
+                <option value="영업외비용">영업외비용</option>
+                <option value="세금">세금</option>
+              </optgroup>
+              <optgroup label="── 대차대조표 ──">
+                <option value="유동자산">유동자산</option>
+                <option value="비유동자산">비유동자산</option>
+                <option value="유동부채">유동부채</option>
+                <option value="자본">자본</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>계정과목명</label>
+            <input type="text" id="aName" placeholder="계정과목명 입력">
+          </div>
+          <div class="form-group">
+            <label>비고</label>
+            <input type="text" id="aNote" placeholder="비고 (선택)">
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveAccount()">저장</button>
+            <button class="btn btn-outline" onclick="resetAccountForm()">초기화</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">분류 순서 설정</div>
+        <ul class="cat-order-list" id="catOrderList"></ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">계정과목 목록</div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="showInactive" onchange="renderAccountTable()"> 사용안함 항목 표시
+          </label>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">No</th>
+              <th>분류</th>
+              <th>계정과목명</th>
+              <th>비고</th>
+              <th class="text-center">상태</th>
+              <th class="text-center" style="width:140px">관리</th>
+            </tr>
+          </thead>
+          <tbody id="accountTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== 데이터관리 페이지 ==================== -->
+    <div id="page-data" class="hidden">
+      <div class="card">
+        <div class="card-title">전체 데이터 내보내기 (백업)</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+          전표, 계정과목, 분류순서, 마감 데이터를 포함한 전체 백업 파일을 다운로드합니다.<br>
+          이전 프로그램의 데이터를 이 프로그램으로 이관할 때 사용합니다.
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="exportAllData()">📥 전체 데이터 다운로드 (JSON)</button>
+          <button class="btn btn-outline" onclick="exportVouchersCSV()">📥 전표만 다운로드 (CSV)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">데이터 가져오기 (복원)</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+          백업 파일(JSON) 또는 전표 CSV 파일을 업로드하여 데이터를 복원합니다.<br>
+          <strong style="color:#dc2626;">주의: 기존 데이터에 병합되거나, 전체 교체할 수 있습니다.</strong>
+        </p>
+        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px;">
+          <div class="form-group">
+            <label>파일 선택 (JSON 또는 CSV)</label>
+            <input type="file" id="dataImportFile" accept=".json,.csv" style="font-size:13px;">
+          </div>
+          <div class="form-group">
+            <label>가져오기 방식</label>
+            <select id="importMode">
+              <option value="merge">병합 (기존 데이터 유지 + 추가)</option>
+              <option value="replace">전체 교체 (기존 데이터 삭제)</option>
+            </select>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="previewImportData()">미리보기</button>
+          </div>
+        </div>
+
+        <div id="dataImportPreview" class="hidden">
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
+            <div class="card-title">가져오기 미리보기</div>
+            <div id="dataImportSummary" style="font-size:13px;margin-bottom:12px;"></div>
+            <div style="max-height:300px;overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:40px">No</th>
+                    <th>날짜</th>
+                    <th>계정과목</th>
+                    <th class="text-right">금액</th>
+                    <th>적요</th>
+                  </tr>
+                </thead>
+                <tbody id="dataImportTable"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="confirmImportData()">확인 가져오기</button>
+              <button class="btn btn-outline" onclick="cancelImportData()">취소</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">현재 데이터 현황</div>
+        <div id="dataStatusSummary" style="font-size:13px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">데이터 초기화</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+          모든 데이터를 삭제하고 초기 상태로 되돌립니다. 이 작업은 되돌릴 수 없습니다.
+        </p>
+        <button class="btn btn-danger" onclick="confirmResetAllData()">전체 데이터 초기화</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal (rendered dynamically) -->
+<div id="modalContainer"></div>
+
+<script>
+// ============================================================
+// Data Store (localStorage 기반 영구 저장)
+// ============================================================
+let vouchers = JSON.parse(localStorage.getItem('hq_vouchers') || '[]');
+let nextId = vouchers.length > 0 ? Math.max(...vouchers.map(v => v.id)) + 1 : 1;
+let editingId = null;
+
+// 계정과목 데이터
+const DEFAULT_ACCOUNTS = [
+  // 손익계산서 계정과목
+  { id: 1,  category: '수익',         name: '서비스매출',       note: '매출액',  active: true },
+  { id: 2,  category: '판매비와관리비', name: '직원급여',       note: '',        active: true },
+  { id: 3,  category: '판매비와관리비', name: '복리후생비',     note: '',        active: true },
+  { id: 4,  category: '판매비와관리비', name: '여비교통비',     note: '',        active: true },
+  { id: 5,  category: '판매비와관리비', name: '접대비',         note: '',        active: true },
+  { id: 6,  category: '판매비와관리비', name: '통신비',         note: '',        active: true },
+  { id: 7,  category: '판매비와관리비', name: '수도광열비',     note: '',        active: true },
+  { id: 8,  category: '판매비와관리비', name: '세금과공과금',   note: '',        active: true },
+  { id: 9,  category: '판매비와관리비', name: '감가상각비',     note: '',        active: true },
+  { id: 10, category: '판매비와관리비', name: '임차료',         note: '',        active: true },
+  { id: 11, category: '판매비와관리비', name: '보험료',         note: '',        active: true },
+  { id: 12, category: '판매비와관리비', name: '운반비',         note: '',        active: true },
+  { id: 13, category: '판매비와관리비', name: '소모품비',       note: '',        active: true },
+  { id: 14, category: '판매비와관리비', name: '수수료비용',     note: '',        active: true },
+  { id: 15, category: '판매비와관리비', name: '건물관리비',     note: '',        active: true },
+  { id: 16, category: '판매비와관리비', name: '무형자산상각비', note: '',        active: true },
+  { id: 17, category: '영업외수익',     name: '이자수익',       note: '',        active: true },
+  { id: 18, category: '영업외수익',     name: '잡이익',         note: '',        active: true },
+  { id: 19, category: '세금',           name: '법인세등',       note: '법인세',  active: true },
+  // 대차대조표 — 유동자산
+  { id: 20, category: '유동자산',       name: '현금및현금성자산', note: '',       active: true },
+  { id: 21, category: '유동자산',       name: '매출채권',        note: '',       active: true },
+  { id: 22, category: '유동자산',       name: '미수수익',        note: '',       active: true },
+  { id: 23, category: '유동자산',       name: '미수금',          note: '',       active: true },
+  // 대차대조표 — 비유동자산
+  { id: 24, category: '비유동자산',     name: '비품',            note: '',       active: true },
+  { id: 25, category: '비유동자산',     name: '영업권',          note: '무형자산', active: true },
+  { id: 26, category: '비유동자산',     name: '임차보증금',      note: '',       active: true },
+  // 대차대조표 — 유동부채
+  { id: 27, category: '유동부채',       name: '매입채무',        note: '',       active: true },
+  { id: 28, category: '유동부채',       name: '미지급금',        note: '',       active: true },
+  { id: 29, category: '유동부채',       name: '예수금',          note: '',       active: true },
+  { id: 30, category: '유동부채',       name: '미지급세금',      note: '',       active: true },
+  { id: 31, category: '유동부채',       name: '미지급비용',      note: '',       active: true },
+  // 대차대조표 — 자본
+  { id: 32, category: '자본',           name: '자본금',          note: '',       active: true },
+  { id: 33, category: '자본',           name: '미처분이익잉여금', note: '',      active: true },
+];
+
+let accounts = JSON.parse(localStorage.getItem('hq_accounts') || 'null');
+if (!accounts) {
+  accounts = DEFAULT_ACCOUNTS;
+  saveAccountsToStorage();
+}
+let acctNextId = accounts.length > 0 ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+let editingAcctId = null;
+
+const DEFAULT_CATEGORY_ORDER = [
+  // 손익계산서
+  { name: '수익',         type: '수익' },
+  { name: '판매비와관리비', type: '비용' },
+  { name: '영업외수익',    type: '수익' },
+  { name: '영업외비용',    type: '비용' },
+  { name: '세금',          type: '비용' },
+  // 대차대조표
+  { name: '유동자산',      type: '자산' },
+  { name: '비유동자산',    type: '자산' },
+  { name: '유동부채',      type: '부채' },
+  { name: '자본',          type: '자본' },
+];
+let CATEGORY_ORDER = JSON.parse(localStorage.getItem('hq_category_order') || 'null');
+// 기존 문자열 배열 형식 마이그레이션
+if (CATEGORY_ORDER && CATEGORY_ORDER.length > 0 && typeof CATEGORY_ORDER[0] === 'string') {
+  CATEGORY_ORDER = CATEGORY_ORDER.map(name => {
+    const def = DEFAULT_CATEGORY_ORDER.find(d => d.name === name);
+    return { name, type: def ? def.type : '비용' };
+  });
+  saveCategoryOrder();
+}
+if (!CATEGORY_ORDER) CATEGORY_ORDER = DEFAULT_CATEGORY_ORDER.map(c => ({ ...c }));
+
+function getCategoryNames() { return CATEGORY_ORDER.map(c => c.name); }
+function getCategoryType(catName) {
+  const c = CATEGORY_ORDER.find(c => c.name === catName);
+  return c ? c.type : '비용';
+}
+
+function saveCategoryOrder() {
+  localStorage.setItem('hq_category_order', JSON.stringify(CATEGORY_ORDER));
+}
+
+const CATEGORY_TYPES = ['수익', '비용', '자산', '부채', '자본'];
+function getCategoryTypeCss(type) {
+  const map = { '수익': 'cat-type-revenue', '비용': 'cat-type-expense', '자산': 'cat-type-asset', '부채': 'cat-type-liability', '자본': 'cat-type-equity' };
+  return map[type] || 'cat-type-expense';
+}
+
+function renderCategoryOrder() {
+  const ul = document.getElementById('catOrderList');
+  ul.innerHTML = CATEGORY_ORDER.map((cat, i) => {
+    return `
+    <li class="cat-order-item">
+      <span class="cat-order-num">${i + 1}</span>
+      <span class="cat-order-name">${cat.name}</span>
+      <span class="cat-type-badge ${getCategoryTypeCss(cat.type)}" onclick="toggleCategoryType(${i})" title="클릭하여 유형 전환">
+        ${cat.type}
+      </span>
+      <span class="cat-order-btns">
+        <button onclick="moveCategoryOrder(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="위로">▲</button>
+        <button onclick="moveCategoryOrder(${i}, 1)" ${i === CATEGORY_ORDER.length - 1 ? 'disabled' : ''} title="아래로">▼</button>
+      </span>
+    </li>`;
+  }).join('');
+}
+
+function moveCategoryOrder(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= CATEGORY_ORDER.length) return;
+  [CATEGORY_ORDER[idx], CATEGORY_ORDER[newIdx]] = [CATEGORY_ORDER[newIdx], CATEGORY_ORDER[idx]];
+  saveCategoryOrder();
+  renderCategoryOrder();
+  renderAccountTable();
+  refreshAllAccountSelects();
+  showToast('분류 순서가 변경되었습니다.');
+}
+
+function toggleCategoryType(idx) {
+  const cur = CATEGORY_TYPES.indexOf(CATEGORY_ORDER[idx].type);
+  CATEGORY_ORDER[idx].type = CATEGORY_TYPES[(cur + 1) % CATEGORY_TYPES.length];
+  saveCategoryOrder();
+  renderCategoryOrder();
+  showToast(`'${CATEGORY_ORDER[idx].name}' 분류가 ${CATEGORY_ORDER[idx].type}계정으로 변경되었습니다.`);
+}
+
+// 마감 데이터 (연도별 월별 마감 상태)
+// 형식: { "2026": [false, false, ...12개] }
+let closingData = JSON.parse(localStorage.getItem('hq_closing') || '{}');
+
+function saveClosingData() {
+  localStorage.setItem('hq_closing', JSON.stringify(closingData));
+}
+
+function isMonthClosed(year, month) {
+  return closingData[year] && closingData[year][month - 1] === true;
+}
+
+function toggleMonthClosing(year, month) {
+  if (!closingData[year]) closingData[year] = new Array(12).fill(false);
+  // 마감 해제 시: 이후 마감된 월이 있으면 경고
+  if (closingData[year][month - 1]) {
+    for (let m = month; m < 12; m++) {
+      if (closingData[year][m]) {
+        showToast(`${month}월 이후 마감된 월이 있어 먼저 해제해주세요.`);
+        return;
+      }
+    }
+    closingData[year][month - 1] = false;
+    saveClosingData();
+    generateReport();
+    showToast(`${year}년 ${month}월 마감이 해제되었습니다.`);
+  } else {
+    // 마감 시: 이전 월이 마감되지 않았으면 경고 (1월 제외)
+    if (month > 1 && !closingData[year][month - 2]) {
+      showToast(`${month - 1}월을 먼저 마감해주세요.`);
+      return;
+    }
+    closingData[year][month - 1] = true;
+    saveClosingData();
+    generateReport();
+    showToast(`${year}년 ${month}월이 마감되었습니다.`);
+  }
+}
+
+function saveToStorage() {
+  localStorage.setItem('hq_vouchers', JSON.stringify(vouchers));
+}
+function saveAccountsToStorage() {
+  localStorage.setItem('hq_accounts', JSON.stringify(accounts));
+}
+
+// ============================================================
+// 계정과목 드롭다운 동적 생성
+// ============================================================
+function buildAccountSelect(selectId, includeAll) {
+  const sel = document.getElementById(selectId);
+  const currentVal = sel.value;
+  sel.innerHTML = '';
+
+  if (includeAll) {
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '전체';
+    sel.appendChild(opt);
+  } else {
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '선택하세요';
+    sel.appendChild(opt);
+  }
+
+  const activeAccounts = accounts.filter(a => a.active);
+  CATEGORY_ORDER.forEach(catObj => {
+    const cat = catObj.name;
+    const catAccounts = activeAccounts.filter(a => a.category === cat);
+    if (catAccounts.length === 0) return;
+    const grp = document.createElement('optgroup');
+    grp.label = '── ' + cat + ' ──';
+    catAccounts.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.name; opt.textContent = a.name;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+
+  // 현재 값 복원
+  if (currentVal) sel.value = currentVal;
+}
+
+function refreshAllAccountSelects() {
+  buildAccountSelect('vAccount', false);
+  buildAccountSelect('sAccount', true);
+}
+
+// ============================================================
+// Initialization
+// ============================================================
+(function init() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('vDate').value = today;
+  document.getElementById('sDateFrom').value = today.slice(0, 8) + '01';
+  document.getElementById('sDateTo').value = today;
+
+  const yearSel = document.getElementById('reportYear');
+  const curYear = new Date().getFullYear();
+  for (let y = curYear; y >= curYear - 5; y--) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y + '년';
+    yearSel.appendChild(opt);
+  }
+
+  if (vouchers.length === 0) {
+    loadSampleData();
+    saveToStorage();
+  }
+
+  refreshAllAccountSelects();
+  renderCategoryOrder();
+  renderTodayTable();
+})();
+
+function loadSampleData() {
+  const sample = [
+    { date: '2026-01-05', account: '직원급여', amount: 3500000, memo: '1월 급여' },
+    { date: '2026-01-05', account: '임차료', amount: 1400000, memo: '1월 사무실 임차료' },
+    { date: '2026-01-10', account: '통신비', amount: 55000, memo: '인터넷 요금' },
+    { date: '2026-01-15', account: '소모품비', amount: 120000, memo: '사무용품 구매' },
+    { date: '2026-02-05', account: '직원급여', amount: 3500000, memo: '2월 급여' },
+    { date: '2026-02-05', account: '임차료', amount: 1400000, memo: '2월 사무실 임차료' },
+    { date: '2026-02-12', account: '접대비', amount: 350000, memo: '거래처 식사' },
+    { date: '2026-02-20', account: '여비교통비', amount: 85000, memo: '출장 교통비' },
+    { date: '2026-03-05', account: '직원급여', amount: 3500000, memo: '3월 급여' },
+    { date: '2026-03-05', account: '임차료', amount: 1400000, memo: '3월 사무실 임차료' },
+    { date: '2026-03-10', account: '복리후생비', amount: 200000, memo: '직원 건강검진' },
+    { date: '2026-03-18', account: '수수료비용', amount: 330000, memo: '세무대리 수수료' },
+    { date: '2026-03-25', account: '건물관리비', amount: 150000, memo: '3월 관리비' },
+    { date: '2026-03-31', account: '서비스매출', amount: 25000000, memo: '1분기 서비스 매출' },
+  ];
+  sample.forEach(s => {
+    vouchers.push({ id: nextId++, date: s.date, account: s.account, amount: s.amount, memo: s.memo });
+  });
+}
+
+// ============================================================
+// Navigation
+// ============================================================
+function showPage(page) {
+  const pages = ['input', 'search', 'report', 'accounts', 'data'];
+  const titles = { input: '전표입력', search: '전표조회', report: '월별 지출 내역표', accounts: '계정과목관리', data: '데이터관리' };
+  pages.forEach(p => {
+    document.getElementById('page-' + p).classList.toggle('hidden', p !== page);
+  });
+  document.getElementById('pageTitle').textContent = titles[page];
+
+  document.querySelectorAll('.sidebar-menu li').forEach((li, i) => {
+    li.classList.toggle('active', pages[i] === page);
+  });
+
+  if (page === 'input') { refreshAllAccountSelects(); renderTodayTable(); }
+  if (page === 'search') { refreshAllAccountSelects(); }
+  if (page === 'report') generateReport();
+  if (page === 'accounts') { renderCategoryOrder(); renderAccountTable(); }
+  if (page === 'data') renderDataStatus();
+}
+
+// ============================================================
+// Format helpers
+// ============================================================
+function fmt(n) {
+  return n.toLocaleString('ko-KR');
+}
+function formatAmountInput(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (v) el.value = Number(v).toLocaleString('ko-KR');
+  else el.value = '';
+}
+function parseAmount(s) {
+  return Number(String(s).replace(/[^0-9]/g, '')) || 0;
+}
+
+// ============================================================
+// Toast
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// Modal
+// ============================================================
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+// ============================================================
+// CRUD — 전표입력
+// ============================================================
+function saveVoucher() {
+  const date = document.getElementById('vDate').value;
+  const account = document.getElementById('vAccount').value;
+  const amount = parseAmount(document.getElementById('vAmount').value);
+  const memo = document.getElementById('vMemo').value.trim();
+
+  if (!date) { showToast('날짜를 입력해주세요.'); return; }
+  if (!account) { showToast('계정과목을 선택해주세요.'); return; }
+  if (!amount) { showToast('금액을 입력해주세요.'); return; }
+
+  // 마감된 월 보호
+  const vYear = date.slice(0, 4);
+  const vMonth = parseInt(date.slice(5, 7));
+  if (isMonthClosed(vYear, vMonth)) {
+    showToast(`${vYear}년 ${vMonth}월은 마감되어 전표를 입력/수정할 수 없습니다.`);
+    return;
+  }
+
+  if (editingId !== null) {
+    const v = vouchers.find(v => v.id === editingId);
+    if (v) { v.date = date; v.account = account; v.amount = amount; v.memo = memo; }
+    editingId = null;
+    showToast('전표가 수정되었습니다.');
+  } else {
+    vouchers.push({ id: nextId++, date, account, amount, memo });
+    showToast('전표가 저장되었습니다.');
+  }
+  saveToStorage();
+
+  resetForm();
+  renderTodayTable();
+}
+
+function resetForm() {
+  document.getElementById('vDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('vAccount').value = '';
+  document.getElementById('vAmount').value = '';
+  document.getElementById('vMemo').value = '';
+  editingId = null;
+}
+
+function editVoucher(id) {
+  const v = vouchers.find(v => v.id === id);
+  if (!v) return;
+  document.getElementById('vDate').value = v.date;
+  document.getElementById('vAccount').value = v.account;
+  document.getElementById('vAmount').value = fmt(v.amount);
+  document.getElementById('vMemo').value = v.memo;
+  editingId = id;
+  showPage('input');
+  window.scrollTo(0, 0);
+  showToast('수정 모드 — 수정 후 저장을 누르세요.');
+}
+
+function confirmDelete(id) {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">전표 삭제</div>
+        <div class="modal-body">이 전표를 삭제하시겠습니까?</div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="closeModal()">취소</button>
+          <button class="btn btn-danger" onclick="deleteVoucher(${id})">삭제</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function deleteVoucher(id) {
+  const target = vouchers.find(v => v.id === id);
+  if (target) {
+    const dYear = target.date.slice(0, 4);
+    const dMonth = parseInt(target.date.slice(5, 7));
+    if (isMonthClosed(dYear, dMonth)) {
+      closeModal();
+      showToast(`${dYear}년 ${dMonth}월은 마감되어 전표를 삭제할 수 없습니다.`);
+      return;
+    }
+  }
+  vouchers = vouchers.filter(v => v.id !== id);
+  saveToStorage();
+  closeModal();
+  showToast('전표가 삭제되었습니다.');
+  renderTodayTable();
+  searchVouchers();
+}
+
+// ============================================================
+// Render — 오늘 입력 목록
+// ============================================================
+function renderTodayTable() {
+  const today = new Date().toISOString().slice(0, 10);
+  const list = vouchers.filter(v => v.date === today);
+  const tbody = document.getElementById('todayTable');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:24px;color:var(--text-secondary);">오늘 입력한 전표가 없습니다.</td></tr>';
+  } else {
+    tbody.innerHTML = list.map((v, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${v.date}</td>
+        <td><span class="badge badge-blue">${v.account}</span></td>
+        <td class="text-right">${fmt(v.amount)}</td>
+        <td>${v.memo}</td>
+        <td class="text-center">
+          <button class="btn btn-edit" onclick="editVoucher(${v.id})">수정</button>
+          <button class="btn btn-danger" onclick="confirmDelete(${v.id})">삭제</button>
+        </td>
+      </tr>`).join('');
+  }
+  const total = list.reduce((s, v) => s + v.amount, 0);
+  document.getElementById('todayCount').textContent = list.length + '건';
+  document.getElementById('todayTotal').textContent = fmt(total) + '원';
+}
+
+// ============================================================
+// CSV 일괄 입력
+// ============================================================
+let csvPendingData = [];
+
+function downloadCsvTemplate() {
+  const bom = '\uFEFF';
+  const header = '날짜,계정과목,금액,적요\n';
+  const example = '2026-04-01,직원급여,3500000,4월 급여\n2026-04-01,임차료,1400000,4월 사무실 임차료\n';
+  const blob = new Blob([bom + header + example], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '전표입력_양식.csv';
+  a.click();
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  // 첫 행은 헤더 — 건너뜀
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+    if (cols.length < 3) continue;
+    rows.push({
+      date: cols[0],
+      account: cols[1],
+      amount: parseAmount(cols[2]),
+      memo: cols[3] || ''
+    });
+  }
+  return rows;
+}
+
+function validateCsvRow(row) {
+  const errors = [];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) errors.push('날짜 형식 오류');
+  const acct = accounts.find(a => a.name === row.account && a.active);
+  if (!acct) errors.push('계정과목 없음');
+  if (!row.amount || row.amount <= 0) errors.push('금액 오류');
+  return errors;
+}
+
+function importCSV() {
+  const fileInput = document.getElementById('csvFile');
+  const file = fileInput.files[0];
+  if (!file) { showToast('CSV 파일을 선택해주세요.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    if (rows.length === 0) { showToast('유효한 데이터가 없습니다.'); return; }
+
+    csvPendingData = rows;
+    const tbody = document.getElementById('csvPreviewTable');
+    tbody.innerHTML = rows.map((r, i) => {
+      const errs = validateCsvRow(r);
+      const hasError = errs.length > 0;
+      return `<tr class="${hasError ? 'row-inactive' : ''}">
+        <td>${i + 1}</td>
+        <td>${r.date}</td>
+        <td>${r.account}</td>
+        <td class="text-right">${r.amount ? fmt(r.amount) : '-'}</td>
+        <td>${r.memo}</td>
+        <td class="text-center">${hasError
+          ? '<span class="badge badge-red">' + errs.join(', ') + '</span>'
+          : '<span class="badge badge-green">OK</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('csvPreviewCount').textContent = rows.length;
+    document.getElementById('csvPreview').classList.remove('hidden');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function confirmCsvImport() {
+  let imported = 0;
+  let skipped = 0;
+  csvPendingData.forEach(r => {
+    const errs = validateCsvRow(r);
+    if (errs.length > 0) { skipped++; return; }
+    vouchers.push({ id: nextId++, date: r.date, account: r.account, amount: r.amount, memo: r.memo });
+    imported++;
+  });
+  saveToStorage();
+  cancelCsvImport();
+  renderTodayTable();
+  showToast(`${imported}건 등록 완료` + (skipped > 0 ? `, ${skipped}건 오류로 건너뜀` : ''));
+}
+
+function cancelCsvImport() {
+  csvPendingData = [];
+  document.getElementById('csvPreview').classList.add('hidden');
+  document.getElementById('csvPreviewTable').innerHTML = '';
+  document.getElementById('csvFile').value = '';
+}
+
+// ============================================================
+// 전표조회
+// ============================================================
+function searchVouchers() {
+  const from = document.getElementById('sDateFrom').value;
+  const to = document.getElementById('sDateTo').value;
+  const acc = document.getElementById('sAccount').value;
+
+  let list = vouchers.slice();
+  if (from) list = list.filter(v => v.date >= from);
+  if (to) list = list.filter(v => v.date <= to);
+  if (acc) list = list.filter(v => v.account === acc);
+  list.sort((a, b) => a.date.localeCompare(b.date));
+  lastSearchResult = list;
+
+  const tbody = document.getElementById('searchTable');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:24px;color:var(--text-secondary);">검색 결과가 없습니다.</td></tr>';
+  } else {
+    tbody.innerHTML = list.map((v, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${v.date}</td>
+        <td><span class="badge badge-blue">${v.account}</span></td>
+        <td class="text-right">${fmt(v.amount)}</td>
+        <td>${v.memo}</td>
+        <td class="text-center">
+          <button class="btn btn-edit" onclick="editVoucher(${v.id})">수정</button>
+          <button class="btn btn-danger" onclick="confirmDelete(${v.id})">삭제</button>
+        </td>
+      </tr>`).join('');
+  }
+  const total = list.reduce((s, v) => s + v.amount, 0);
+  document.getElementById('searchCount').textContent = list.length + '건';
+  document.getElementById('searchTotal').textContent = fmt(total) + '원';
+}
+
+let lastSearchResult = [];
+
+function resetSearch() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('sDateFrom').value = today.slice(0, 8) + '01';
+  document.getElementById('sDateTo').value = today;
+  document.getElementById('sAccount').value = '';
+  document.getElementById('searchTable').innerHTML = '';
+  document.getElementById('searchCount').textContent = '0건';
+  document.getElementById('searchTotal').textContent = '0원';
+  lastSearchResult = [];
+  cancelSearchCsvImport();
+}
+
+// ============================================================
+// 전표조회 CSV 다운로드 / 업로드
+// ============================================================
+function exportSearchCSV() {
+  if (lastSearchResult.length === 0) {
+    showToast('먼저 검색을 실행해주세요.');
+    return;
+  }
+  let csv = '\uFEFF날짜,계정과목,금액,적요\n';
+  lastSearchResult.forEach(v => {
+    csv += `"${v.date}","${v.account}","${v.amount}","${(v.memo || '').replace(/"/g, '""')}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const from = document.getElementById('sDateFrom').value;
+  const to = document.getElementById('sDateTo').value;
+  a.download = `전표조회_${from}_${to}.csv`;
+  a.click();
+  showToast(`${lastSearchResult.length}건 CSV 다운로드 완료`);
+}
+
+let searchCsvPending = [];
+
+function uploadSearchCSV() {
+  const fileInput = document.getElementById('searchCsvFile');
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    if (rows.length === 0) { showToast('유효한 데이터가 없습니다.'); fileInput.value = ''; return; }
+
+    searchCsvPending = rows;
+    const tbody = document.getElementById('searchCsvPreviewTable');
+    tbody.innerHTML = rows.map((r, i) => {
+      const errs = validateCsvRow(r);
+      // 마감 체크
+      if (errs.length === 0 && r.date) {
+        const vy = r.date.slice(0, 4);
+        const vm = parseInt(r.date.slice(5, 7));
+        if (isMonthClosed(vy, vm)) errs.push('마감된 월');
+      }
+      const hasError = errs.length > 0;
+      return `<tr class="${hasError ? 'row-inactive' : ''}">
+        <td>${i + 1}</td>
+        <td>${r.date}</td>
+        <td>${r.account}</td>
+        <td class="text-right">${r.amount ? fmt(r.amount) : '-'}</td>
+        <td>${r.memo}</td>
+        <td class="text-center">${hasError
+          ? '<span class="badge badge-red">' + errs.join(', ') + '</span>'
+          : '<span class="badge badge-green">OK</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('searchCsvPreviewCount').textContent = rows.length;
+    document.getElementById('searchCsvPreview').classList.remove('hidden');
+  };
+  reader.readAsText(file, 'UTF-8');
+  fileInput.value = '';
+}
+
+function confirmSearchCsvImport() {
+  let imported = 0;
+  let skipped = 0;
+  searchCsvPending.forEach(r => {
+    const errs = validateCsvRow(r);
+    if (errs.length > 0) { skipped++; return; }
+    // 마감 체크
+    const vy = r.date.slice(0, 4);
+    const vm = parseInt(r.date.slice(5, 7));
+    if (isMonthClosed(vy, vm)) { skipped++; return; }
+    vouchers.push({ id: nextId++, date: r.date, account: r.account, amount: r.amount, memo: r.memo });
+    imported++;
+  });
+  saveToStorage();
+  cancelSearchCsvImport();
+  searchVouchers();
+  showToast(`${imported}건 등록 완료` + (skipped > 0 ? `, ${skipped}건 건너뜀` : ''));
+}
+
+function cancelSearchCsvImport() {
+  searchCsvPending = [];
+  document.getElementById('searchCsvPreview').classList.add('hidden');
+  document.getElementById('searchCsvPreviewTable').innerHTML = '';
+}
+
+// ============================================================
+// 월별 내역표
+// ============================================================
+function generateReport() {
+  const year = document.getElementById('reportYear').value;
+  const yearVouchers = vouchers.filter(v => v.date.startsWith(year));
+
+  const pivot = {};
+  yearVouchers.forEach(v => {
+    const month = parseInt(v.date.slice(5, 7));
+    if (!pivot[v.account]) pivot[v.account] = new Array(12).fill(0);
+    pivot[v.account][month - 1] += v.amount;
+  });
+
+  // 계정과목을 분류 순서대로 정렬
+  const catNames = getCategoryNames();
+  const sortedAccounts = accounts.slice().sort((a, b) => {
+    const ci = catNames.indexOf(a.category);
+    const cj = catNames.indexOf(b.category);
+    return ci - cj;
+  });
+  const orderedNames = sortedAccounts.map(a => a.name);
+  const accts = orderedNames.filter(a => pivot[a]);
+  Object.keys(pivot).forEach(a => { if (!accts.includes(a)) accts.push(a); });
+
+  // 수익/비용 분류
+  function getAcctType(accName) {
+    const a = accounts.find(x => x.name === accName);
+    return a ? getCategoryType(a.category) : '비용';
+  }
+
+  const revenueAccts = accts.filter(a => getAcctType(a) === '수익');
+  const expenseAccts = accts.filter(a => getAcctType(a) === '비용');
+  const assetAccts = accts.filter(a => getAcctType(a) === '자산');
+  const liabilityAccts = accts.filter(a => getAcctType(a) === '부채');
+  const equityAccts = accts.filter(a => getAcctType(a) === '자본');
+
+  // 전월이월 계산: 이전 달이 마감되었으면 그 달의 순이익을 다음 달로 이월
+  const carryover = new Array(12).fill(0);
+  for (let m = 0; m < 12; m++) {
+    if (m === 0) continue; // 1월은 이월 없음
+    if (isMonthClosed(year, m)) { // 이전 달(m월)이 마감되었는지 확인
+      // 이전 달의 수익 합계
+      let prevRevenue = 0;
+      revenueAccts.forEach(acc => { prevRevenue += (pivot[acc] ? pivot[acc][m - 1] : 0); });
+      // 이전 달의 비용 합계
+      let prevExpense = 0;
+      expenseAccts.forEach(acc => { prevExpense += (pivot[acc] ? pivot[acc][m - 1] : 0); });
+      // 이전 달의 이월 포함한 순이익
+      carryover[m] = carryover[m - 1] + prevRevenue - prevExpense;
+    }
+  }
+
+  const revenueMonthTotals = new Array(12).fill(0);
+  const expenseMonthTotals = new Array(12).fill(0);
+  let revenueGrand = 0;
+  let expenseGrand = 0;
+
+  let html = '';
+
+  // 수익 섹션
+  html += `<tr><td colspan="14" class="report-section-header report-section-revenue">수익계정</td></tr>`;
+
+  // 전월이월 행 (이월금액이 하나라도 있을 때)
+  const hasCarryover = carryover.some(v => v !== 0);
+  if (hasCarryover) {
+    const carryTotal = carryover.reduce((s, v) => s + v, 0);
+    revenueGrand += carryTotal;
+    html += '<tr class="carryover-row">';
+    html += '<td>전월이월</td>';
+    carryover.forEach((v, i) => {
+      revenueMonthTotals[i] += v;
+      const cls = v < 0 ? 'color:#dc2626;' : '';
+      html += `<td style="${cls}">${v ? fmt(v) : '-'}</td>`;
+    });
+    html += `<td style="font-weight:700;background:#fef9c3;">${fmt(carryTotal)}</td>`;
+    html += '</tr>';
+  }
+
+  revenueAccts.forEach(acc => {
+    const row = pivot[acc];
+    const rowTotal = row.reduce((s, v) => s + v, 0);
+    revenueGrand += rowTotal;
+    html += '<tr>';
+    html += `<td>${acc}</td>`;
+    row.forEach((v, i) => {
+      revenueMonthTotals[i] += v;
+      html += `<td>${v ? fmt(v) : '-'}</td>`;
+    });
+    html += `<td style="font-weight:700;background:#eff6ff;">${fmt(rowTotal)}</td>`;
+    html += '</tr>';
+  });
+  // 수익 소계
+  html += '<tr class="subtotal-row subtotal-revenue">';
+  html += '<td>수익 소계</td>';
+  revenueMonthTotals.forEach(v => { html += `<td style="text-align:right;">${v ? fmt(v) : '-'}</td>`; });
+  html += `<td style="text-align:right;">${fmt(revenueGrand)}</td>`;
+  html += '</tr>';
+
+  // 비용 섹션
+  if (expenseAccts.length > 0) {
+    html += `<tr><td colspan="14" class="report-section-header report-section-expense">비용계정</td></tr>`;
+    expenseAccts.forEach(acc => {
+      const row = pivot[acc];
+      const rowTotal = row.reduce((s, v) => s + v, 0);
+      expenseGrand += rowTotal;
+      html += '<tr>';
+      html += `<td>${acc}</td>`;
+      row.forEach((v, i) => {
+        expenseMonthTotals[i] += v;
+        html += `<td>${v ? fmt(v) : '-'}</td>`;
+      });
+      html += `<td style="font-weight:700;background:#eff6ff;">${fmt(rowTotal)}</td>`;
+      html += '</tr>';
+    });
+    // 비용 소계
+    html += '<tr class="subtotal-row subtotal-expense">';
+    html += '<td>비용 소계</td>';
+    expenseMonthTotals.forEach(v => { html += `<td style="text-align:right;">${v ? fmt(v) : '-'}</td>`; });
+    html += `<td style="text-align:right;">${fmt(expenseGrand)}</td>`;
+    html += '</tr>';
+  }
+
+  // 합계 (수익 - 비용)
+  const netMonthTotals = revenueMonthTotals.map((r, i) => r - expenseMonthTotals[i]);
+  const netGrand = revenueGrand - expenseGrand;
+
+  html += '<tr class="total-row">';
+  html += '<td>합 계 (수익 - 비용)</td>';
+  netMonthTotals.forEach(v => {
+    const cls = v < 0 ? 'color:#dc2626;' : '';
+    html += `<td style="text-align:right;${cls}">${v ? fmt(v) : '-'}</td>`;
+  });
+  const netCls = netGrand < 0 ? 'color:#dc2626;' : '';
+  html += `<td style="text-align:right;background:#dbeafe;${netCls}">${fmt(netGrand)}</td>`;
+  html += '</tr>';
+
+  // 대차대조표 섹션
+  const bsTypes = [
+    { label: '자산', accts: assetAccts, css: 'asset', color: '#f0fdf4' },
+    { label: '부채', accts: liabilityAccts, css: 'liability', color: '#fefce8' },
+    { label: '자본', accts: equityAccts, css: 'equity', color: '#f5f3ff' },
+  ];
+  const hasBsData = bsTypes.some(t => t.accts.length > 0);
+  if (hasBsData) {
+    html += `<tr><td colspan="14" style="padding:4px;"></td></tr>`;
+    bsTypes.forEach(t => {
+      if (t.accts.length === 0) return;
+      html += `<tr><td colspan="14" class="report-section-header report-section-${t.css}">${t.label}계정</td></tr>`;
+      const monthTotals = new Array(12).fill(0);
+      let grand = 0;
+      t.accts.forEach(acc => {
+        const row = pivot[acc];
+        const rowTotal = row.reduce((s, v) => s + v, 0);
+        grand += rowTotal;
+        html += '<tr>';
+        html += `<td>${acc}</td>`;
+        row.forEach((v, i) => {
+          monthTotals[i] += v;
+          html += `<td>${v ? fmt(v) : '-'}</td>`;
+        });
+        html += `<td style="font-weight:700;background:${t.color};">${fmt(rowTotal)}</td>`;
+        html += '</tr>';
+      });
+      html += `<tr class="subtotal-row subtotal-${t.css}">`;
+      html += `<td>${t.label} 소계</td>`;
+      monthTotals.forEach(v => { html += `<td style="text-align:right;">${v ? fmt(v) : '-'}</td>`; });
+      html += `<td style="text-align:right;">${fmt(grand)}</td>`;
+      html += '</tr>';
+    });
+  }
+
+  // 마감 버튼 행
+  html += '<tr class="closing-row">';
+  html += '<td style="font-weight:600;font-size:11px;text-align:left;color:var(--text-secondary);">마감</td>';
+  for (let m = 1; m <= 12; m++) {
+    const closed = isMonthClosed(year, m);
+    html += `<td><button class="btn-close-month ${closed ? 'closed' : ''}" onclick="toggleMonthClosing('${year}', ${m})">${closed ? '마감완료' : '마감'}</button></td>`;
+  }
+  html += '<td></td>';
+  html += '</tr>';
+
+  document.getElementById('reportBody').innerHTML = html;
+}
+
+// ============================================================
+// CSV Export
+// ============================================================
+function exportCSV() {
+  const year = document.getElementById('reportYear').value;
+  const table = document.getElementById('reportTable');
+  let csv = '\uFEFF';
+  for (const row of table.rows) {
+    const cells = [];
+    for (const cell of row.cells) {
+      let text = cell.textContent.replace(/"/g, '""');
+      cells.push('"' + text + '"');
+    }
+    csv += cells.join(',') + '\n';
+  }
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${year} 월별 지출 내역.csv`;
+  a.click();
+}
+
+// ============================================================
+// 계정과목 관리
+// ============================================================
+function saveAccount() {
+  const category = document.getElementById('aCategory').value;
+  const name = document.getElementById('aName').value.trim();
+  const note = document.getElementById('aNote').value.trim();
+
+  if (!name) { showToast('계정과목명을 입력해주세요.'); return; }
+
+  if (editingAcctId !== null) {
+    const a = accounts.find(a => a.id === editingAcctId);
+    if (a) {
+      // 이름 변경 시 기존 전표의 계정과목명도 업데이트
+      const oldName = a.name;
+      if (oldName !== name) {
+        const dup = accounts.find(x => x.name === name && x.id !== editingAcctId);
+        if (dup) { showToast('이미 존재하는 계정과목명입니다.'); return; }
+        vouchers.forEach(v => { if (v.account === oldName) v.account = name; });
+        saveToStorage();
+      }
+      a.category = category;
+      a.name = name;
+      a.note = note;
+    }
+    editingAcctId = null;
+    showToast('계정과목이 수정되었습니다.');
+  } else {
+    const dup = accounts.find(a => a.name === name);
+    if (dup) { showToast('이미 존재하는 계정과목명입니다.'); return; }
+    accounts.push({ id: acctNextId++, category, name, note, active: true });
+    showToast('계정과목이 등록되었습니다.');
+  }
+
+  saveAccountsToStorage();
+  refreshAllAccountSelects();
+  resetAccountForm();
+  renderAccountTable();
+}
+
+function resetAccountForm() {
+  document.getElementById('aCategory').value = '판매비와관리비';
+  document.getElementById('aName').value = '';
+  document.getElementById('aNote').value = '';
+  editingAcctId = null;
+}
+
+function editAccount(id) {
+  const a = accounts.find(a => a.id === id);
+  if (!a) return;
+  document.getElementById('aCategory').value = a.category;
+  document.getElementById('aName').value = a.name;
+  document.getElementById('aNote').value = a.note;
+  editingAcctId = id;
+  window.scrollTo(0, 0);
+  showToast('수정 모드 — 수정 후 저장을 누르세요.');
+}
+
+function toggleAccountActive(id) {
+  const a = accounts.find(a => a.id === id);
+  if (!a) return;
+  a.active = !a.active;
+  saveAccountsToStorage();
+  refreshAllAccountSelects();
+  renderAccountTable();
+  showToast(a.active ? `'${a.name}' 계정과목을 사용으로 변경했습니다.` : `'${a.name}' 계정과목을 사용안함으로 변경했습니다.`);
+}
+
+function renderAccountTable() {
+  const showInactive = document.getElementById('showInactive').checked;
+  let list = showInactive ? accounts.slice() : accounts.filter(a => a.active);
+
+  // 분류 순서대로 정렬
+  const catNames = getCategoryNames();
+  list.sort((a, b) => {
+    const ci = catNames.indexOf(a.category);
+    const cj = catNames.indexOf(b.category);
+    if (ci !== cj) return ci - cj;
+    return 0;
+  });
+
+  const tbody = document.getElementById('accountTable');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:24px;color:var(--text-secondary);">등록된 계정과목이 없습니다.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((a, i) => `
+    <tr class="${a.active ? '' : 'row-inactive'}">
+      <td>${i + 1}</td>
+      <td><span class="badge badge-blue">${a.category}</span> <span class="cat-type-badge ${getCategoryTypeCss(getCategoryType(a.category))}" style="cursor:default;">${getCategoryType(a.category)}</span></td>
+      <td>${a.name}</td>
+      <td>${a.note || '-'}</td>
+      <td class="text-center">
+        ${a.active
+          ? '<span class="badge badge-green">사용</span>'
+          : '<span class="badge badge-red">사용안함</span>'}
+      </td>
+      <td class="text-center">
+        <button class="btn btn-edit" onclick="editAccount(${a.id})">수정</button>
+        <button class="btn btn-toggle ${a.active ? 'btn-toggle-off' : 'btn-toggle-on'}" onclick="toggleAccountActive(${a.id})">
+          ${a.active ? '사용안함' : '사용'}
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+// ============================================================
+// 데이터관리 — 내보내기 / 가져오기
+// ============================================================
+function exportAllData() {
+  const data = {
+    version: '2.0',
+    exportDate: new Date().toISOString(),
+    vouchers: vouchers,
+    accounts: accounts,
+    categoryOrder: CATEGORY_ORDER,
+    closing: closingData
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `HQ_Account_백업_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  showToast(`전체 데이터 백업 완료 (전표 ${vouchers.length}건, 계정과목 ${accounts.length}건)`);
+}
+
+function exportVouchersCSV() {
+  if (vouchers.length === 0) { showToast('전표 데이터가 없습니다.'); return; }
+  const sorted = vouchers.slice().sort((a, b) => a.date.localeCompare(b.date));
+  let csv = '\uFEFF날짜,계정과목,금액,적요\n';
+  sorted.forEach(v => {
+    csv += `"${v.date}","${v.account}","${v.amount}","${(v.memo || '').replace(/"/g, '""')}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `HQ_Account_전표_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  showToast(`전표 ${sorted.length}건 CSV 다운로드 완료`);
+}
+
+let importPendingData = null;
+let importPendingType = null; // 'json' or 'csv'
+
+function previewImportData() {
+  const fileInput = document.getElementById('dataImportFile');
+  const file = fileInput.files[0];
+  if (!file) { showToast('파일을 선택해주세요.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const isJson = file.name.toLowerCase().endsWith('.json');
+
+    if (isJson) {
+      try {
+        const data = JSON.parse(text);
+        importPendingData = data;
+        importPendingType = 'json';
+
+        const vCount = (data.vouchers || []).length;
+        const aCount = (data.accounts || []).length;
+        const hasCatOrder = !!data.categoryOrder;
+        const hasClosing = !!data.closing;
+
+        let summary = `<strong>JSON 백업 파일</strong>`;
+        if (data.exportDate) summary += ` (내보내기 날짜: ${data.exportDate.slice(0, 10)})`;
+        summary += `<br>`;
+        summary += `• 전표: <strong>${vCount}건</strong><br>`;
+        summary += `• 계정과목: <strong>${aCount}건</strong><br>`;
+        summary += `• 분류순서: ${hasCatOrder ? '<span class="badge badge-green">포함</span>' : '<span class="badge badge-gray">없음</span>'} `;
+        summary += `• 마감데이터: ${hasClosing ? '<span class="badge badge-green">포함</span>' : '<span class="badge badge-gray">없음</span>'}`;
+        document.getElementById('dataImportSummary').innerHTML = summary;
+
+        const tbody = document.getElementById('dataImportTable');
+        const preview = (data.vouchers || []).slice(0, 50);
+        tbody.innerHTML = preview.map((v, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${v.date}</td>
+            <td>${v.account}</td>
+            <td class="text-right">${fmt(v.amount)}</td>
+            <td>${v.memo || ''}</td>
+          </tr>`).join('');
+        if (vCount > 50) {
+          tbody.innerHTML += `<tr><td colspan="5" class="text-center" style="color:var(--text-secondary);padding:12px;">... 외 ${vCount - 50}건 더</td></tr>`;
+        }
+
+        document.getElementById('dataImportPreview').classList.remove('hidden');
+      } catch (err) {
+        showToast('JSON 파일 파싱 오류: ' + err.message);
+      }
+    } else {
+      // CSV
+      const rows = parseCSV(text);
+      if (rows.length === 0) { showToast('유효한 데이터가 없습니다.'); return; }
+
+      importPendingData = rows;
+      importPendingType = 'csv';
+
+      let summary = `<strong>CSV 전표 파일</strong><br>`;
+      summary += `• 전표: <strong>${rows.length}건</strong>`;
+      document.getElementById('dataImportSummary').innerHTML = summary;
+
+      const tbody = document.getElementById('dataImportTable');
+      const preview = rows.slice(0, 50);
+      tbody.innerHTML = preview.map((v, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${v.date}</td>
+          <td>${v.account}</td>
+          <td class="text-right">${v.amount ? fmt(v.amount) : '-'}</td>
+          <td>${v.memo || ''}</td>
+        </tr>`).join('');
+      if (rows.length > 50) {
+        tbody.innerHTML += `<tr><td colspan="5" class="text-center" style="color:var(--text-secondary);padding:12px;">... 외 ${rows.length - 50}건 더</td></tr>`;
+      }
+
+      document.getElementById('dataImportPreview').classList.remove('hidden');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function confirmImportData() {
+  const mode = document.getElementById('importMode').value;
+
+  if (importPendingType === 'json') {
+    const data = importPendingData;
+
+    if (mode === 'replace') {
+      vouchers = (data.vouchers || []);
+      accounts = (data.accounts || []);
+      if (data.categoryOrder) CATEGORY_ORDER = data.categoryOrder;
+      if (data.closing) closingData = data.closing;
+      nextId = vouchers.length > 0 ? Math.max(...vouchers.map(v => v.id)) + 1 : 1;
+      acctNextId = accounts.length > 0 ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+    } else {
+      // 병합
+      const existingIds = new Set(vouchers.map(v => `${v.date}_${v.account}_${v.amount}_${v.memo}`));
+      let added = 0;
+      (data.vouchers || []).forEach(v => {
+        const key = `${v.date}_${v.account}_${v.amount}_${v.memo}`;
+        if (!existingIds.has(key)) {
+          vouchers.push({ id: nextId++, date: v.date, account: v.account, amount: v.amount, memo: v.memo || '' });
+          existingIds.add(key);
+          added++;
+        }
+      });
+      // 계정과목 병합
+      const existingAcctNames = new Set(accounts.map(a => a.name));
+      (data.accounts || []).forEach(a => {
+        if (!existingAcctNames.has(a.name)) {
+          accounts.push({ id: acctNextId++, category: a.category, name: a.name, note: a.note || '', active: a.active !== false });
+          existingAcctNames.add(a.name);
+        }
+      });
+    }
+
+    saveToStorage();
+    saveAccountsToStorage();
+    saveCategoryOrder();
+    saveClosingData();
+    showToast(mode === 'replace' ? '전체 데이터가 교체되었습니다.' : '데이터가 병합되었습니다.');
+
+  } else if (importPendingType === 'csv') {
+    const rows = importPendingData;
+
+    if (mode === 'replace') {
+      vouchers = [];
+      nextId = 1;
+    }
+
+    let imported = 0;
+    let skipped = 0;
+    const existingIds = new Set(vouchers.map(v => `${v.date}_${v.account}_${v.amount}_${v.memo}`));
+
+    rows.forEach(r => {
+      if (!r.date || !r.account || !r.amount) { skipped++; return; }
+      const key = `${r.date}_${r.account}_${r.amount}_${r.memo}`;
+      if (mode === 'merge' && existingIds.has(key)) { skipped++; return; }
+      // CSV 업로드 시 없는 계정과목은 자동 등록
+      const acct = accounts.find(a => a.name === r.account);
+      if (!acct) {
+        accounts.push({ id: acctNextId++, category: '판매비와관리비', name: r.account, note: '자동등록', active: true });
+        saveAccountsToStorage();
+      }
+      vouchers.push({ id: nextId++, date: r.date, account: r.account, amount: r.amount, memo: r.memo || '' });
+      existingIds.add(key);
+      imported++;
+    });
+
+    saveToStorage();
+    showToast(`${imported}건 가져오기 완료` + (skipped > 0 ? `, ${skipped}건 건너뜀` : ''));
+  }
+
+  cancelImportData();
+  refreshAllAccountSelects();
+  renderCategoryOrder();
+}
+
+function cancelImportData() {
+  importPendingData = null;
+  importPendingType = null;
+  document.getElementById('dataImportPreview').classList.add('hidden');
+  document.getElementById('dataImportTable').innerHTML = '';
+  document.getElementById('dataImportSummary').innerHTML = '';
+  document.getElementById('dataImportFile').value = '';
+}
+
+function confirmResetAllData() {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">⚠️ 전체 데이터 초기화</div>
+        <div class="modal-body">
+          모든 전표, 계정과목, 분류순서, 마감 데이터가 삭제됩니다.<br>
+          <strong style="color:#dc2626;">이 작업은 되돌릴 수 없습니다.</strong><br><br>
+          계속하시겠습니까?
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="closeModal()">취소</button>
+          <button class="btn btn-danger" onclick="resetAllData()">초기화 실행</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function resetAllData() {
+  localStorage.removeItem('hq_vouchers');
+  localStorage.removeItem('hq_accounts');
+  localStorage.removeItem('hq_category_order');
+  localStorage.removeItem('hq_closing');
+  vouchers = [];
+  nextId = 1;
+  accounts = DEFAULT_ACCOUNTS.map(a => ({ ...a }));
+  acctNextId = accounts.length > 0 ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+  CATEGORY_ORDER = DEFAULT_CATEGORY_ORDER.map(c => ({ ...c }));
+  closingData = {};
+  saveToStorage();
+  saveAccountsToStorage();
+  saveCategoryOrder();
+  saveClosingData();
+  closeModal();
+  refreshAllAccountSelects();
+  renderCategoryOrder();
+  showToast('전체 데이터가 초기화되었습니다.');
+}
+
+function renderDataStatus() {
+  const el = document.getElementById('dataStatusSummary');
+  const totalAmount = vouchers.reduce((s, v) => s + v.amount, 0);
+  const activeAccts = accounts.filter(a => a.active).length;
+  const dates = vouchers.map(v => v.date).sort();
+  const dateRange = dates.length > 0 ? `${dates[0]} ~ ${dates[dates.length - 1]}` : '-';
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>• 전표 건수: <strong>${vouchers.length}건</strong></div>
+      <div>• 전표 기간: <strong>${dateRange}</strong></div>
+      <div>• 총 금액: <strong>${fmt(totalAmount)}원</strong></div>
+      <div>• 계정과목: <strong>${activeAccts}개</strong> (전체 ${accounts.length}개)</div>
+    </div>`;
+}
+</script>
+</body>
+</html>
